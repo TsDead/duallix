@@ -1,0 +1,403 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Duallix — разработка Telegram-ботов</title>
+<style>
+  :root{
+    --bg:#000;
+    --panel:#0b0b0d;
+    --tile:#141416;
+    --tile-2:#1b1b1e;
+    --line:rgba(255,255,255,.08);
+    --line-strong:rgba(255,255,255,.15);
+    --ink:#fff;
+    --muted:#8a8a8e;
+    --muted-2:#5c5c60;
+    --accent:#ff3b30;
+    --accent-2:#ff7a45;
+    --accent-soft:rgba(255,59,48,.14);
+    --maxw:1120px;
+  }
+  *{box-sizing:border-box;}
+  html{-webkit-text-size-adjust:100%;scroll-behavior:smooth;}
+  body{margin:0;background:var(--bg);color:var(--ink);
+    font-family:-apple-system,BlinkMacSystemFont,"SF Pro Text","Segoe UI",Roboto,"Inter",system-ui,sans-serif;
+    line-height:1.5;-webkit-font-smoothing:antialiased;overflow-x:hidden;}
+  a{color:inherit;text-decoration:none;}
+  .wrap{max-width:var(--maxw);margin:0 auto;padding:0 20px;}
+  .accent{color:var(--accent);}
+
+  .btn{display:inline-flex;align-items:center;gap:9px;background:var(--accent);color:#fff;
+    font-weight:600;padding:12px 20px;border-radius:100px;border:0;cursor:pointer;font-size:15px;
+    transition:transform .15s ease, filter .15s ease;}
+  .btn:hover{filter:brightness(1.09);transform:translateY(-1px);}
+  .btn.ghost{background:transparent;color:var(--ink);border:1px solid var(--line-strong);}
+  .btn.sm{padding:9px 16px;font-size:14px;}
+  .btn.dark{background:#000;color:#fff;}
+
+  /* top bar */
+  .topbar{position:sticky;top:0;z-index:40;background:rgba(0,0,0,.6);
+    backdrop-filter:saturate(140%) blur(14px);border-bottom:1px solid var(--line);}
+  .topbar .wrap{display:flex;align-items:center;justify-content:space-between;height:62px;}
+  .brand{display:flex;align-items:center;gap:11px;font-weight:800;letter-spacing:.3px;font-size:18px;}
+  .logo{width:26px;height:26px;border-radius:8px;background:conic-gradient(from 210deg,var(--accent),var(--accent-2),var(--accent));
+    display:flex;align-items:center;justify-content:center;box-shadow:0 0 20px rgba(255,59,48,.4);}
+  .logo::before{content:"";width:9px;height:9px;background:#000;border-radius:2px;transform:rotate(45deg);}
+
+  /* hero */
+  .hero{padding:70px 0 30px;position:relative;}
+  .hero::before{content:"";position:absolute;top:-120px;right:-160px;width:520px;height:520px;
+    background:radial-gradient(circle, rgba(255,59,48,.16), transparent 62%);pointer-events:none;}
+  .hero-grid{display:grid;grid-template-columns:1.12fr .88fr;gap:44px;align-items:center;position:relative;}
+  .kicker{display:inline-flex;align-items:center;gap:8px;color:var(--muted);font-size:13.5px;font-weight:500;
+    border:1px solid var(--line);border-radius:100px;padding:7px 14px;margin-bottom:22px;}
+  .kicker .pulse{width:7px;height:7px;border-radius:50%;background:var(--accent);animation:pulse 2.4s infinite;}
+  @keyframes pulse{0%,100%{opacity:1}50%{opacity:.3}}
+  h1{font-size:clamp(36px,5.6vw,62px);line-height:1.01;letter-spacing:-.025em;font-weight:800;margin:0 0 18px;}
+  .lead{font-size:clamp(16px,2.1vw,19px);color:var(--muted);max-width:32ch;margin:0 0 28px;}
+  .lead b{color:var(--ink);font-weight:600;}
+  .hero-cta{display:flex;gap:12px;flex-wrap:wrap;}
+
+  /* phone */
+  .phone-stage{display:flex;justify-content:center;}
+  .phone{width:284px;flex:0 0 284px;border-radius:44px;padding:12px;
+    background:linear-gradient(180deg,#232326,#0a0a0b);border:1px solid rgba(255,255,255,.12);
+    box-shadow:0 44px 90px -34px rgba(0,0,0,.95);transform:rotate(1.5deg);}
+  .screen{background:#000;border-radius:33px;overflow:hidden;position:relative;height:576px;border:1px solid rgba(255,255,255,.06);}
+  .notch{position:absolute;top:9px;left:50%;transform:translateX(-50%);width:102px;height:26px;background:#000;border-radius:16px;z-index:5;}
+  .app{padding:44px 15px 15px;}
+  .app-head{display:flex;align-items:center;justify-content:space-between;margin-bottom:14px;}
+  .app-title{font-weight:800;letter-spacing:.6px;font-size:16px;}
+  .app-title span{color:var(--accent);}
+  .app-sub{font-size:9.5px;color:var(--muted);text-transform:uppercase;letter-spacing:1.4px;}
+  .round-btns{display:flex;gap:7px;}
+  .rb{width:30px;height:30px;border-radius:50%;background:var(--tile-2);display:flex;align-items:center;justify-content:center;color:var(--muted);font-size:13px;border:1px solid var(--line);}
+  .caps-row{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:11px;}
+  .cap{background:var(--tile);border:1px solid var(--line);border-radius:16px;padding:11px 12px;display:flex;flex-direction:column;gap:6px;}
+  .cap .ico{width:26px;height:26px;border-radius:9px;background:var(--accent-soft);color:var(--accent);display:flex;align-items:center;justify-content:center;font-size:13px;}
+  .cap .ct{font-size:12px;font-weight:600;}
+  .prod{background:var(--tile);border:1px solid var(--line);border-radius:18px;overflow:hidden;}
+  .prod .img{height:92px;background:radial-gradient(120% 120% at 30% 10%, #2a2a2e, #101012 60%);position:relative;display:flex;align-items:center;justify-content:center;color:var(--muted-2);font-size:11px;}
+  .prod .img::after{content:"9.9/10";position:absolute;top:8px;left:8px;background:rgba(0,0,0,.55);border:1px solid var(--line);color:#dcdcdc;font-size:9px;padding:3px 7px;border-radius:100px;}
+  .prod .meta{padding:9px 11px 11px;}
+  .prod .nm{font-size:11.5px;font-weight:600;}
+  .prod .rw{display:flex;align-items:center;justify-content:space-between;margin-top:7px;}
+  .prod .size{font-size:10px;color:var(--muted);border:1px solid var(--line);border-radius:100px;padding:2px 8px;}
+  .prod .price{font-size:13px;font-weight:800;color:var(--accent);}
+
+  /* ticker */
+  .ticker{border-block:1px solid var(--line);background:var(--panel);overflow:hidden;padding:16px 0;margin-top:26px;}
+  .track{display:flex;gap:38px;width:max-content;animation:scroll 26s linear infinite;}
+  .track span{color:var(--muted);font-size:15px;font-weight:500;white-space:nowrap;display:flex;align-items:center;gap:38px;}
+  .track span::after{content:"◆";color:var(--accent);font-size:9px;}
+  @keyframes scroll{to{transform:translateX(-50%)}}
+
+  /* sections */
+  section{padding:60px 0;}
+  .eyebrow{color:var(--accent);font-weight:700;font-size:13px;margin:0 0 12px;}
+  .sec-head{max-width:56ch;margin-bottom:30px;}
+  .sec-head h2{font-size:clamp(26px,3.8vw,40px);letter-spacing:-.025em;margin:0;font-weight:800;line-height:1.06;}
+  .sec-head h2 em{font-style:normal;color:var(--muted);}
+
+  /* bento — varied sizes */
+  .bento{display:grid;grid-template-columns:repeat(6,1fr);grid-auto-rows:minmax(120px,auto);gap:14px;}
+  .tile{background:var(--tile);border:1px solid var(--line);border-radius:22px;padding:22px;display:flex;flex-direction:column;justify-content:space-between;gap:14px;}
+  .tile .ic{width:40px;height:40px;border-radius:12px;background:var(--accent-soft);color:var(--accent);display:flex;align-items:center;justify-content:center;font-size:19px;}
+  .tile h3{margin:0;font-size:16.5px;font-weight:700;letter-spacing:-.01em;}
+  .tile p{margin:6px 0 0;color:var(--muted);font-size:14px;line-height:1.45;}
+  .big{grid-column:span 3;grid-row:span 2;background:linear-gradient(160deg,#1a1210,#141416 60%);border-color:rgba(255,59,48,.24);}
+  .big .ic{background:var(--accent);color:#fff;width:46px;height:46px;font-size:22px;}
+  .big h3{font-size:22px;}
+  .s3{grid-column:span 3;} .s2{grid-column:span 2;} .s6{grid-column:span 6;}
+  .demo-row{display:grid;grid-template-columns:1fr 1fr;gap:9px;}
+  .demo{background:#000;border:1px solid var(--line);border-radius:14px;padding:11px 12px;display:flex;flex-direction:column;gap:6px;}
+  .demo .k{font-size:11px;color:var(--muted);}
+  .demo .v{font-size:13px;font-weight:700;}
+  .demo .v.line{text-decoration:line-through;color:var(--muted-2);}
+
+  /* statement band */
+  .statement{padding:74px 0;text-align:center;
+    background:radial-gradient(120% 130% at 50% 0%, rgba(255,59,48,.10), transparent 60%);
+    border-block:1px solid var(--line);}
+  .statement p{max-width:20ch;margin:0 auto;font-size:clamp(28px,4.6vw,46px);font-weight:800;letter-spacing:-.025em;line-height:1.08;}
+  .statement .sub{font-size:16px;font-weight:500;color:var(--muted);max-width:36ch;margin:18px auto 0;letter-spacing:0;}
+
+  /* why — punchy rows */
+  .why{display:flex;flex-direction:column;gap:12px;}
+  .row{display:grid;grid-template-columns:auto 1fr auto;gap:20px;align-items:center;
+    border:1px solid var(--line);border-radius:20px;padding:22px 24px;background:var(--panel);}
+  .row .lead-txt{font-size:clamp(18px,2.4vw,23px);font-weight:700;letter-spacing:-.01em;}
+  .row .yes{color:var(--accent);font-weight:600;font-size:14px;display:flex;align-items:center;gap:8px;}
+  .row .no{color:var(--muted-2);font-size:13.5px;text-align:right;max-width:22ch;}
+  .row .no s{color:var(--muted-2);}
+  .row .idx{font-size:22px;font-weight:800;color:var(--accent);opacity:.5;font-variant-numeric:tabular-nums;}
+
+  /* numbers band — full accent */
+  .stats{background:var(--accent);color:#fff;}
+  .stats .wrap{display:grid;grid-template-columns:repeat(4,1fr);gap:20px;padding-block:46px;}
+  .stat{border-left:2px solid rgba(255,255,255,.35);padding-left:18px;}
+  .stat .n{font-size:clamp(34px,5vw,50px);font-weight:900;letter-spacing:-.03em;line-height:1;}
+  .stat .l{font-size:13.5px;margin-top:8px;color:rgba(255,255,255,.85);}
+
+  /* security — compact split */
+  .sec-split{display:grid;grid-template-columns:.85fr 1.15fr;gap:24px;align-items:start;}
+  .sec-left h2{font-size:clamp(26px,3.6vw,38px);letter-spacing:-.025em;margin:0 0 12px;font-weight:800;line-height:1.08;}
+  .sec-left p{color:var(--muted);font-size:15px;margin:0;}
+  .sgrid{display:grid;grid-template-columns:1fr 1fr;gap:12px;}
+  .sitem{border:1px solid var(--line);border-radius:16px;padding:16px 16px 17px;background:var(--tile);}
+  .sitem .si{color:var(--accent);font-size:17px;margin-bottom:9px;}
+  .sitem h5{margin:0 0 4px;font-size:14.5px;font-weight:700;}
+  .sitem p{margin:0;color:var(--muted);font-size:12.5px;line-height:1.4;}
+
+  /* process — each step is its own outlined block */
+  .flow{display:grid;grid-template-columns:repeat(5,1fr);gap:12px;margin-top:8px;}
+  .node{border:1px solid var(--line);border-radius:18px;padding:20px 18px;background:var(--panel);
+    display:flex;flex-direction:column;gap:8px;transition:border-color .2s ease, transform .2s ease;}
+  .node:hover{border-color:rgba(255,59,48,.35);transform:translateY(-2px);}
+  .node .num{width:32px;height:32px;border-radius:50%;background:var(--accent-soft);color:var(--accent);
+    font-weight:800;font-size:14px;display:flex;align-items:center;justify-content:center;
+    font-variant-numeric:tabular-nums;margin-bottom:4px;}
+  .node h5{margin:0;font-size:15px;font-weight:700;}
+  .node p{margin:0;color:var(--muted);font-size:12.5px;line-height:1.4;}
+
+  /* cta */
+  .cta-band{border:1px solid rgba(255,59,48,.3);border-radius:30px;
+    background:radial-gradient(120% 170% at 100% 0%, rgba(255,59,48,.18), transparent 55%), var(--panel);
+    padding:46px;display:flex;align-items:center;justify-content:space-between;gap:28px;flex-wrap:wrap;}
+  .cta-band h2{margin:0 0 8px;font-size:clamp(26px,3.6vw,38px);letter-spacing:-.025em;}
+  .cta-band p{margin:0;color:var(--muted);font-size:16px;max-width:40ch;}
+  .cta-actions{display:flex;gap:12px;flex-wrap:wrap;}
+
+  footer{border-top:1px solid var(--line);padding:34px 0 48px;color:var(--muted);font-size:14px;}
+  .foot-grid{display:flex;justify-content:space-between;align-items:center;gap:16px;flex-wrap:wrap;}
+  .foot-grid a{color:var(--ink);font-weight:600;}
+  .foot-grid a:hover{color:var(--accent);}
+
+  .reveal{opacity:0;transform:translateY(16px);}
+  .reveal.in{opacity:1;transform:none;transition:opacity .6s ease, transform .6s ease;}
+
+  @media (max-width:900px){
+    .hero{padding:44px 0 10px;}
+    .hero-grid{grid-template-columns:1fr;gap:34px;}
+    .lead{max-width:none;}
+    .bento{grid-template-columns:repeat(2,1fr);}
+    .big,.s3,.s2,.s6{grid-column:span 2;grid-row:auto;}
+    .row{grid-template-columns:1fr;gap:12px;text-align:left;}
+    .row .no{text-align:left;max-width:none;}
+    .row .idx{display:none;}
+    .stats .wrap{grid-template-columns:1fr 1fr;gap:26px 20px;}
+    .sec-split{grid-template-columns:1fr;gap:20px;}
+    .sgrid{grid-template-columns:1fr;}
+    .flow{grid-template-columns:1fr;gap:12px;}
+    .cta-band{padding:30px;}
+  }
+  @media (prefers-reduced-motion:reduce){
+    .reveal{opacity:1;transform:none;transition:none;}
+    .track{animation:none;} .kicker .pulse{animation:none;}
+  }
+</style>
+</head>
+<body>
+
+<header class="topbar">
+  <div class="wrap">
+    <div class="brand"><span class="logo"></span> Duallix</div>
+    <a class="btn sm" href="#cta">Обсудить проект</a>
+  </div>
+</header>
+
+<!-- HERO -->
+<section class="hero">
+  <div class="wrap">
+    <div class="hero-grid">
+      <div class="reveal">
+        <span class="kicker"><span class="pulse"></span> Telegram-боты и Mini Apps</span>
+        <h1>Боты, которые не стыдно показать клиенту.</h1>
+        <p class="lead">Магазины и сервисы прямо внутри Telegram. <b>Интерфейс уровня приложения</b>, своя логика, всё под ключ.</p>
+        <div class="hero-cta">
+          <a class="btn" href="#cta">Заказать бота</a>
+          <a class="btn ghost" href="#work">Смотреть проект</a>
+        </div>
+      </div>
+
+      <div class="phone-stage reveal">
+        <div class="phone">
+          <div class="screen">
+            <div class="notch"></div>
+            <div class="app">
+              <div class="app-head">
+                <div><div class="app-title">YFB <span>STORE</span></div><div class="app-sub">Каталог вещей</div></div>
+                <div class="round-btns"><div class="rb">♡</div><div class="rb">☰</div></div>
+              </div>
+              <div class="caps-row">
+                <div class="cap"><span class="ico">★</span><span class="ct">Избранное</span></div>
+                <div class="cap"><span class="ico">◈</span><span class="ct">Корзина</span></div>
+              </div>
+              <div class="prod">
+                <div class="img">фото товара</div>
+                <div class="meta">
+                  <div class="nm">Тапки Adidas Jeremy Scott</div>
+                  <div class="rw"><span class="size">RU 42.5</span><span class="price">9 990 ₽</span></div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ticker -->
+  <div class="ticker" aria-hidden="true">
+    <div class="track">
+      <span>Mini App&nbsp;&nbsp;Каталог из постов&nbsp;&nbsp;Модерация в личке&nbsp;&nbsp;Заявки и статусы&nbsp;&nbsp;Рассылки&nbsp;&nbsp;Аналитика&nbsp;&nbsp;Бэкапы&nbsp;&nbsp;Автоанонс&nbsp;&nbsp;</span>
+      <span>Mini App&nbsp;&nbsp;Каталог из постов&nbsp;&nbsp;Модерация в личке&nbsp;&nbsp;Заявки и статусы&nbsp;&nbsp;Рассылки&nbsp;&nbsp;Аналитика&nbsp;&nbsp;Бэкапы&nbsp;&nbsp;Автоанонс&nbsp;&nbsp;</span>
+    </div>
+  </div>
+</section>
+
+<!-- FLAGSHIP BENTO -->
+<section id="work">
+  <div class="wrap">
+    <div class="sec-head reveal">
+      <p class="eyebrow">Проект в продакшене</p>
+      <h2>Магазин, который живёт <em>внутри Telegram</em></h2>
+    </div>
+    <div class="bento">
+      <div class="tile big reveal">
+        <div>
+          <span class="ic">▦</span>
+          <h3>Витрина как приложение</h3>
+          <p>Каталог, карточка, корзина, избранное, профиль, оформление и раздел «Продано».</p>
+        </div>
+        <div class="demo-row">
+          <div class="demo"><span class="k">В наличии</span><span class="v accent">9 990 ₽</span></div>
+          <div class="demo"><span class="k">Продано</span><span class="v line">9 990 ₽</span></div>
+        </div>
+      </div>
+      <div class="tile s3 reveal"><span class="ic">⌘</span><div><h3>Каталог собирается сам</h3><p>Бот читает посты канала и делает карточки товара.</p></div></div>
+      <div class="tile s3 reveal"><span class="ic">✓</span><div><h3>Модерация в личке</h3><p>Опубликовать или отклонить в один тап.</p></div></div>
+      <div class="tile s2 reveal"><span class="ic">◷</span><h3>Заявки и статусы</h3></div>
+      <div class="tile s2 reveal"><span class="ic">✦</span><h3>Автоанонс новинок</h3></div>
+      <div class="tile s2 reveal"><span class="ic">◱</span><h3>Панель управления</h3></div>
+    </div>
+  </div>
+</section>
+
+<!-- STATEMENT -->
+<section class="statement reveal">
+  <div class="wrap">
+    <p>Один бот заменил канал, сайт и таблицу.</p>
+    <p class="sub">Клиент управляет магазином из Telegram — без сайта, без браузерной админки, без лишних сервисов.</p>
+  </div>
+</section>
+
+<!-- WHY -->
+<section>
+  <div class="wrap">
+    <div class="sec-head reveal">
+      <p class="eyebrow">Чем отличается</p>
+      <h2>Не конструктор. <em>Ваш продукт.</em></h2>
+    </div>
+    <div class="why">
+      <div class="row reveal">
+        <span class="idx">01</span>
+        <div><div class="lead-txt">Код и данные — ваши</div><span class="yes">никакой привязки к чужой платформе</span></div>
+        <div class="no">в конструкторе клиенты <s>живут на чужом сервисе</s></div>
+      </div>
+      <div class="row reveal">
+        <span class="idx">02</span>
+        <div><div class="lead-txt">Дизайн под бренд</div><span class="yes">интерфейс уровня приложения, а не типовые кнопки</span></div>
+        <div class="no">шаблон, <s>узнаётся с первого экрана</s></div>
+      </div>
+      <div class="row reveal">
+        <span class="idx">03</span>
+        <div><div class="lead-txt">Тесты, а не «на удачу»</div><span class="yes">обновления не ломают то, что работало</span></div>
+        <div class="no">платформа <s>меняется без предупреждения</s></div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- STATS -->
+<section class="stats reveal">
+  <div class="wrap">
+    <div class="stat"><div class="n">110</div><div class="l">автотестов в проекте</div></div>
+    <div class="stat"><div class="n">7</div><div class="l">экранов в Mini App</div></div>
+    <div class="stat"><div class="n">0</div><div class="l">сторонних трекеров</div></div>
+    <div class="stat"><div class="n">24/7</div><div class="l">на своём хостинге</div></div>
+  </div>
+</section>
+
+<!-- SECURITY -->
+<section>
+  <div class="wrap sec-split">
+    <div class="sec-left reveal">
+      <p class="eyebrow">Надёжность</p>
+      <h2>Что под капотом</h2>
+      <p>Простыми словами — почему за магазин можно не переживать.</p>
+    </div>
+    <div class="sgrid reveal">
+      <div class="sitem"><div class="si">🔒</div><h5>Всё зашифровано</h5><p>Данные между покупателем и сервером защищены. В браузере — замочек, как у крупных сайтов.</p></div>
+      <div class="sitem"><div class="si">🛡</div><h5>В админку — только вы</h5><p>Панель открывается лишь с вашего аккаунта. Чужой не зайдёт, даже если узнает адрес.</p></div>
+      <div class="sitem"><div class="si">🗄</div><h5>Копия каждый день</h5><p>Все товары и заказы автоматически сохраняются и падают вам в личку. Потерять ничего нельзя.</p></div>
+      <div class="sitem"><div class="si">♻</div><h5>Работает само</h5><p>Если что-то сбоит — сервер поднимает бота сам. Держится, даже когда провайдеры шалят.</p></div>
+      <div class="sitem"><div class="si">✧</div><h5>Ничего лишнего наружу</h5><p>Никаких чужих счётчиков и рекламы. Данные покупателей не уходят на сторону.</p></div>
+      <div class="sitem"><div class="si">🖥</div><h5>Свой сервер</h5><p>Бот живёт на отдельном сервере, а не на общей платформе. Всё под вашим контролем.</p></div>
+    </div>
+  </div>
+</section>
+
+<!-- PROCESS -->
+<section>
+  <div class="wrap">
+    <div class="sec-head reveal">
+      <p class="eyebrow">Как работаем</p>
+      <h2>От идеи до запуска</h2>
+    </div>
+    <div class="flow reveal">
+      <div class="node"><span class="num">01</span><h5>Обсуждаем</h5><p>Что должен делать бот.</p></div>
+      <div class="node"><span class="num">02</span><h5>Прототип</h5><p>Макет экранов и логики.</p></div>
+      <div class="node"><span class="num">03</span><h5>Разработка</h5><p>Сборка и тесты.</p></div>
+      <div class="node"><span class="num">04</span><h5>Запуск</h5><p>Хостинг, домен, бэкапы.</p></div>
+      <div class="node"><span class="num">05</span><h5>Поддержка</h5><p>Доработки по мере роста.</p></div>
+    </div>
+  </div>
+</section>
+
+<!-- CTA -->
+<section id="cta">
+  <div class="wrap">
+    <div class="cta-band reveal">
+      <div>
+        <h2>Расскажите, какого бота хотите</h2>
+        <p>Опишу решение, сроки и стоимость. Первая консультация бесплатна.</p>
+      </div>
+      <div class="cta-actions">
+        <a class="btn" href="https://t.me/Ts_Deadd" target="_blank" rel="noopener">Написать в Telegram</a>
+        <a class="btn ghost" href="mailto:stepchikcrypto@gmail.com">Почта</a>
+      </div>
+    </div>
+  </div>
+</section>
+
+<footer>
+  <div class="wrap foot-grid">
+    <div><b style="color:#fff">Duallix</b> — разработка Telegram-ботов и Mini Apps</div>
+    <div><a href="https://t.me/Ts_Deadd" target="_blank" rel="noopener">@Ts_Deadd</a> · <a href="mailto:stepchikcrypto@gmail.com">stepchikcrypto@gmail.com</a></div>
+  </div>
+</footer>
+
+<script>
+  const items = document.querySelectorAll('.reveal');
+  if (window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches){
+    items.forEach(el=>el.classList.add('in'));
+  } else {
+    const io = new IntersectionObserver((es)=>{es.forEach(e=>{if(e.isIntersecting){e.target.classList.add('in');io.unobserve(e.target);}});},{threshold:.12});
+    items.forEach(el=>io.observe(el));
+  }
+</script>
+</body>
+</html>
